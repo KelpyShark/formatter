@@ -1,0 +1,192 @@
+# format guide for this document
+# 
+# <text> = required text
+# [text] = optional text
+# 
+
+ 
+# functionName:
+#    name: "functionName"
+#    description: "Description of the function"
+#    alias: "def,function"
+#    color: "green
+
+# data types
+
+integer:
+    name: "integer"
+    description: "Integer data type"
+    params: "int <value> | int <variable_name> = <value> | <variable_name> = <value> # AUTOASSIGN"
+    alias: "int,integer"
+    color: "lightgreen"
+
+float:
+    name: "float"
+    description: "Floating-point data type"
+    params: "float <value> | float <variable_name> = <value> | <variable_name> = <value> # AUTOASSIGN"
+    alias: "float,double"
+    color: "lightcyan"
+
+string:
+    name: "string"
+    description: "String data type"
+    params: "str <value> | str <variable_name> = <value> | <variable_name> = <value> # AUTOASSIGN"
+    alias: "str,string"
+    color: "lightred"
+    children:
+        string-':
+            name: "string with single quotes"
+            description: "String enclosed in single quotes"
+            params: "'<value>' # AUTOASSIGN"
+            alias: "',''"
+            color: "lightred"
+            require-parent: false
+        string-":
+            name: "string with double quotes"
+            description: "String enclosed in double quotes"
+            params: '"<value>" # AUTOASSIGN'
+            alias: '","'
+            color: "lightred"
+            require-parent: false
+
+array:
+    name: "array"
+    description: "Array or list data type"
+    params: "array <value1>, <value2>, ... | array <variable_name> = [<value1>, <value2>, ...] | <variable_name> = [<value1>, <value2>, ...] # AUTOASSIGN"
+    alias: "array,list"
+    color: "lightyellow"
+
+dictionary:
+    name: "dictionary"
+    description: "Dictionary or map data type"
+    params: "dict <key1>: <value1>, <key2>: <value2>, ... | dict <variable_name> = {<key1>: <value1>, <key2>: <value2>, ...} | <variable_name> = {<key1>: <value1>, <key2>: <value2>, ...} # AUTOASSIGN"
+    alias: "dict,map"
+    color: "lightmagenta"
+
+boolean:
+    name: "boolean"
+    description: "Boolean data type"
+    params: "CANNOT BE DIRECTLY ASSIGNED, USE TRUE OR FALSE KEYWORDS"
+    alias: null
+    color: "white"
+    children:
+        true:
+            name: "true"
+            description: "Boolean true value"
+            params: "true"
+            alias: "true"
+            color: "white"
+            require-parent: false
+        false:
+            name: "false"
+            description: "Boolean false value"
+            params: "false"
+            alias: "false"
+            color: "white"
+            require-parent: false
+
+comment:
+    name: "comment"
+    description: "Comment in the code"
+    alias: null
+    color: "green"
+    children:
+        single-line-#:
+            name: "single-line comment"
+            description: "Single-line comment using #"
+            params: "# <comment_text>"
+            alias: "#"
+            color: "green"
+            require-parent: false
+        single-line-//:
+            name: "single-line comment (alternative)"
+            description: "Single-line comment using //"
+            params: "// <comment_text>"
+            alias: "//"
+            color: "green"
+            require-parent: false
+        multi-line-###:
+            name: "multi-line comment"
+            description: "Multi-line comment using ###"
+            params: "### <comment_text> ###"
+            alias: "###"
+            color: "green"
+            require-parent: false
+            children:
+                end-multi-line-###:
+                    reqired: true
+                    name: "multi-line comment end"
+                    description: "End of multi-line comment using ###"
+                    params: "###"
+                    alias: "###"
+                    color: "green"
+                    require-parent: true
+        multi-line-/*:
+            name: "multi-line comment (alternative)"
+            description: "Multi-line comment using /* */"
+            params: "/* <comment_text> */"
+            alias: "/*"
+            color: "green"
+            require-parent: false
+            children:
+                end-multi-line-*/:
+                    reqired: true
+                    name: "multi-line comment end"
+                    description: "End of multi-line comment using */"
+                    params: "*/"
+                    alias: "*/"
+                    color: "green"
+                    require-parent: true
+
+# keywords
+
+import:
+    name: "import"
+    description: "Import module or library statement"
+    params: "import <module/library>]"
+    alias: "import,include"
+    color: "lightblue"
+
+function:
+    name: "function"
+    description: "Function definition"
+    params: "def <function_name>([parameters]) {code_block}"
+    alias: "def,function"
+    color: "lightblue"
+
+if:
+    name: "if"
+    description: "If statement for conditional execution"
+    params: "if <condition> {code_block}"
+    alias: "if"
+    color: "lightblue"
+    children:
+        elif:
+            name: "elif"
+            description: "Else if statement for additional conditions"
+            params: "elif <condition> {code_block}"
+            alias: "elif"
+            color: "lightblue"
+            require-parent: true
+        else:
+            name: "else"
+            description: "Else statement for default execution"
+            params: "else {code_block}"
+            alias: "else"
+            color: "lightblue"
+            require-parent: true
+
+for:
+    name: "for"
+    description: "For loop for iterating over a sequence"
+    params: "for <variable> in <sequence> {code_block}"
+    alias: "for"
+    color: "lightblue"
+
+while:
+    name: "while"
+    description: "While loop for repeated execution as long as a condition is true"
+    params: "while <condition> {code_block}"
+    alias: "while"
+    color: "lightblue"
+

@@ -1,0 +1,46 @@
+{
+    "name": "ks-formatter",
+    "displayName": "KS Formatter",
+    "description": "A simple formatter for KelpyShark files",
+    "version": "0.0.1",
+    "publisher": "ks",
+    "engines": {
+        "vscode": "^1.6.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:kelpyshark"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "kelpyshark",
+                "aliases": [
+                    "kelpy",
+                    "kelpyshark",
+                    "ks"
+                ],
+                "extensions": [
+                    "ks"
+                ]
+            }
+        ],
+        "commands": [
+            {
+                "command": "extension.format-kelpyshark",
+                "title": "Format KelpyShark Files"
+            }
+        ]
+    },
+    "scripts": {
+        "postinstall": "node ./node_modules/vscode/bin/install && tsc"
+    },
+    "devDependencies": {
+        "@types/node": "*",
+        "vscode": "1.0.3",
+        "typescript": "2.0.6"
+    }
+}
