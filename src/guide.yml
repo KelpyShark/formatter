@@ -147,6 +147,13 @@ import:
     alias: "import,include"
     color: "lightblue"
 
+from:
+    name: "from"
+    description: "From module import specific functions or classes"
+    params: "from <module/library> import <function/class>"
+    alias: "from"
+    color: "lightblue"
+
 function:
     name: "function"
     description: "Function definition"
@@ -176,6 +183,21 @@ if:
             color: "lightblue"
             require-parent: true
 
+try:
+    name: "try"
+    description: "Try block for exception handling"
+    params: "try {code_block} except [ExceptionType] {code_block}"
+    alias: "try,except"
+    color: "lightblue"
+    children:
+        except:
+            name: "catch"
+            description: "Except block for handling exceptions"
+            params: "catch [ExceptionType] {code_block}"
+            alias: "catch"
+            color: "lightblue"
+            require-parent: true
+
 for:
     name: "for"
     description: "For loop for iterating over a sequence"
@@ -188,5 +210,26 @@ while:
     description: "While loop for repeated execution as long as a condition is true"
     params: "while <condition> {code_block}"
     alias: "while"
+    color: "lightblue"
+
+return:
+    name: "return"
+    description: "Return statement to exit a function and optionally return a value"
+    params: "return [value]"
+    alias: "return"
+    color: "lightblue"
+
+class:
+    name: "class"
+    description: "Class definition for creating objects"
+    params: "class <ClassName> {code_block}"
+    alias: "class"
+    color: "lightblue"
+
+file:
+    name: "file"
+    description: "File handling operations"
+    params: "open(<filename>, <mode>) | with open(<filename>, <mode>) as <variable> {code_block}"
+    alias: "file"
     color: "lightblue"
 
