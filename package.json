@@ -1,46 +1,85 @@
 {
     "name": "ks-formatter",
-    "displayName": "KS Formatter",
-    "description": "A simple formatter for KelpyShark files",
-    "version": "0.0.1",
-    "publisher": "ks",
+    "displayName": "KelpyShark Formatter",
+    "description": "Formatter and language support for KelpyShark (.ks) files",
+    "version": "0.1.0",
+    "publisher": "kelpyshark",
+    "icon": "icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/KelpyShark/formatter"
+    },
     "engines": {
-        "vscode": "^1.6.0"
+        "vscode": "^1.80.0"
     },
     "categories": [
-        "Other"
+        "Formatters",
+        "Programming Languages"
     ],
-    "activationEvents": [
-        "onLanguage:kelpyshark"
-    ],
+    "activationEvents": [],
     "main": "./out/src/extension",
     "contributes": {
         "languages": [
             {
                 "id": "kelpyshark",
                 "aliases": [
+                    "KelpyShark",
                     "kelpy",
-                    "kelpyshark",
                     "ks"
                 ],
                 "extensions": [
-                    "ks"
-                ]
+                    ".ks"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "kelpyshark",
+                "scopeName": "source.kelpyshark",
+                "path": "./syntaxes/kelpyshark.tmLanguage.json"
             }
         ],
         "commands": [
             {
                 "command": "extension.format-kelpyshark",
-                "title": "Format KelpyShark Files"
+                "title": "Format KelpyShark File",
+                "category": "KelpyShark"
             }
-        ]
+        ],
+        "keybindings": [
+            {
+                "command": "extension.format-kelpyshark",
+                "key": "shift+alt+f",
+                "when": "editorLangId == kelpyshark"
+            }
+        ],
+        "configuration": {
+            "title": "KelpyShark Formatter",
+            "properties": {
+                "kelpyshark.formatter.indentSize": {
+                    "type": "number",
+                    "default": 4,
+                    "description": "Number of spaces per indentation level."
+                },
+                "kelpyshark.formatter.insertFinalNewline": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Insert a final newline at end of file."
+                }
+            }
+        }
     },
     "scripts": {
-        "postinstall": "node ./node_modules/vscode/bin/install && tsc"
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "vscode:prepublish": "npm run compile",
+        "pretest": "npm run compile",
+        "test": "node ./out/test/runTests.js"
     },
     "devDependencies": {
-        "@types/node": "*",
-        "vscode": "1.0.3",
-        "typescript": "2.0.6"
+        "@types/node": "^18.0.0",
+        "@types/vscode": "^1.80.0",
+        "typescript": "^5.0.0"
     }
 }
