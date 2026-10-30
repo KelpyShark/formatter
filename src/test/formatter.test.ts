@@ -11,7 +11,7 @@ let passed = 0;
 let failed = 0;
 
 function test(name: string, input: string, expected: string): void {
-    const actual = formatSource(input);
+    const actual = formatSource(input, 4, true);
     if (actual === expected) {
         console.log(`  ✓  ${name}`);
         passed++;
@@ -41,6 +41,21 @@ test('nested indentation',
 test('closing brace at correct indent',
     'if true {\nprint 1\n}\nprint 2',
     'if true {\n    print 1\n}\nprint 2\n'
+);
+
+test('indent colon/end blocks without relying on source indentation',
+    'if ready:\nprint "go"\nend\nprint "done"',
+    'if ready:\n    print "go"\nend\nprint "done"\n'
+);
+
+test('align colon-style elif and else bodies',
+    'if first:\nprint 1\nelif second:\nprint 2\nelse:\nprint 3\nend',
+    'if first:\n    print 1\nelif second:\n    print 2\nelse:\n    print 3\nend\n'
+);
+
+test('indent braced else body when close and else share a line',
+    'if ready {\nprint 1\n} else {\nprint 2\n}',
+    'if ready {\n    print 1\n} else {\n    print 2\n}\n'
 );
 
 // ── Operators ─────────────────────────────────────────────────────────────────

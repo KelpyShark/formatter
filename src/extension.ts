@@ -14,6 +14,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // Use one formatting provider. A second provider for the same language
+    // makes VS Code treat this extension as two competing formatters.
+    const onSaveFormatting = vscode.workspace.onWillSaveTextDocument(event => {
+        const config = vscode.workspace.getConfiguration('kelpyshark.formatter', event.document.uri);
+        if (event.document.languageId !== 'kelpyshark' || !config.get<boolean>('formatOnSave', false)) {
+            return;
+        }
+        event.waitUntil(Promise.resolve(createFormattingEdits(event.document)));
+    });
+
     // Register the explicit "Format KelpyShark Files" command from package.json
     const formatCommand = vscode.commands.registerCommand('extension.format-kelpyshark', () => {
         const editor = vscode.window.activeTextEditor;
@@ -35,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('KelpyShark file formatted!');
     });
 
-    context.subscriptions.push(formattingProvider, formatCommand);
+    context.subscriptions.push(formattingProvider, onSaveFormatting, formatCommand);
 }
 
 export function deactivate() {
@@ -60,10 +70,22 @@ export function deactivate() {
  */
 export function formatDocument(document: vscode.TextDocument): string {
     const raw = document.getText();
-    return formatSource(raw);
+    const config = vscode.workspace.getConfiguration('kelpyshark.formatter', document.uri);
+    const indentSize = config.get<number>('indentSize', 4);
+    const insertFinalNewline = config.get<boolean>('insertFinalNewline', false);
+    const trimTrailingWhitespace = config.get<boolean>('trimTrailingWhitespace', true);
+
+    return formatSource(raw, indentSize, insertFinalNewline, trimTrailingWhitespace);
 }
 
-export function formatSource(source: string): string {
+function createFormattingEdits(document: vscode.TextDocument): vscode.TextEdit[] {
+    const firstLine = document.lineAt(0);
+    const lastLine = document.lineAt(document.lineCount - 1);
+    const fullRange = new vscode.Range(firstLine.range.start, lastLine.range.end);
+    return [vscode.TextEdit.replace(fullRange, formatDocument(document))];
+}
+
+export function formatSource(source: string, indentSize: number = 4, insertFinalNewline: boolean = false, trimTrailingWhitespace: boolean = true): string {
     const lines = source.split('\n');
     const result: string[] = [];
     let indentLevel = 0;
@@ -72,7 +94,7 @@ export function formatSource(source: string): string {
 
     for (let i = 0; i < lines.length; i++) {
         // Strip trailing whitespace and de-indent (we'll re-indent below)
-        let line = lines[i].trimEnd();
+        let line = trimTrailingWhitespace ? lines[i].trimEnd() : lines[i];
         const stripped = line.trim();
 
         // Blank line handling — collapse multiple blanks to one
@@ -85,20 +107,31 @@ export function formatSource(source: string): string {
         }
         prevWasBlank = false;
 
-        // Count closing braces at start to reduce indent BEFORE emitting
+        // Close explicit `end` blocks and align alternate colon-style branches
+        // with their matching header before emitting this line.
+        if (/^end\b/.test(stripped)) {
+            indentLevel = Math.max(0, indentLevel - 1);
+        } else if (isColonBlockHeader(stripped) && /^(elif|else|catch)\b/.test(stripped)) {
+            indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        // Count closing braces at start to reduce indent BEFORE emitting.
         const leadingClose = countLeadingCloseBraces(stripped);
         indentLevel = Math.max(0, indentLevel - leadingClose);
 
         // Format the content of the line (operators, spacing, keywords)
-        let formatted = formatLine(stripped);
+        let formatted = formatLine(stripped, trimTrailingWhitespace);
 
         // Re-indent
-        const indented = '    '.repeat(indentLevel) + formatted;
+        const indentString = ' '.repeat(indentSize);
+        const indented = indentString.repeat(indentLevel) + formatted;
         result.push(indented);
 
-        // Count opening braces at end to increase indent for next line
-        const trailingOpen = countTrailingOpenBraces(stripped);
-        indentLevel += trailingOpen;
+        // Increase depth only for a recognized brace block header or a
+        // colon-style block header; dictionary literal braces do not change it.
+        if (isBraceBlockHeader(stripped) || isColonBlockHeader(stripped)) {
+            indentLevel++;
+        }
 
         // Insert blank line before top-level def/class
         const isTopDef = indentLevel === 0 && /^(def|class)\s/.test(stripped);
@@ -111,16 +144,17 @@ export function formatSource(source: string): string {
         prevWasTopLevel = isTopDef || (indentLevel === 0 && !isTopDef);
     }
 
-    // Trim trailing blank lines, then add final newline
+    // Trim trailing blank lines, then add final newline if configured
     while (result.length > 0 && result[result.length - 1] === '') {
         result.pop();
     }
-    return result.join('\n') + '\n';
+    const resultText = result.join('\n');
+    return insertFinalNewline ? resultText + '\n' : resultText;
 }
 
 // ── Line-level formatting ─────────────────────────────────────────────────────
 
-function formatLine(line: string): string {
+function formatLine(line: string, trimTrailingWhitespace: boolean = true): string {
     // Don't touch comments
     if (line.startsWith('#') || line.startsWith('//')) {
         return line;
@@ -166,10 +200,10 @@ function formatLine(line: string): string {
 
     // Space around arithmetic (+, -, *, /) but not in negative numbers or string concat
     fmt = processOutsideStrings(fmt, s => s
-        .replace(/([a-zA-Z0-9_\])"'])\s*\+\s*/g, '$1 + ')
-        .replace(/([a-zA-Z0-9_\])"'])\s*-\s*/g, '$1 - ')
-        .replace(/([a-zA-Z0-9_\])"'])\s*\*\s*/g, '$1 * ')
-        .replace(/([a-zA-Z0-9_\])"'])\s*\/\s*/g, '$1 / ')
+        .replace(/([a-zA-Z0-9_\])"'])\s*\+(?!=)\s*/g, '$1 + ')
+        .replace(/([a-zA-Z0-9_\])"'])\s*-(?!=)\s*/g, '$1 - ')
+        .replace(/([a-zA-Z0-9_\])"'])\s*\*(?!=)\s*/g, '$1 * ')
+        .replace(/([a-zA-Z0-9_\])"'])\s*\/(?!=)\s*/g, '$1 / ')
         .replace(/([a-zA-Z0-9_\])"'])\s*%\s*/g, '$1 % ')
     );
 
@@ -197,7 +231,7 @@ function formatLine(line: string): string {
     fmt = processOutsideStrings(fmt, s => s.replace(/  +/g, ' '));
 
     const trail = comment ? '  ' + comment : '';
-    return fmt.trimEnd() + trail;
+    return trimTrailingWhitespace ? fmt.trimEnd() + trail : fmt + trail;
 }
 
 // ── Brace counting ────────────────────────────────────────────────────────────
@@ -212,25 +246,18 @@ function countLeadingCloseBraces(line: string): number {
     return count;
 }
 
-/** Count net opening braces at end of line (not inside strings or comments). */
-function countTrailingOpenBraces(line: string): number {
-    let depth = 0;
-    let inStr = false;
-    let strChar = '';
-    let i = 0;
-    while (i < line.length) {
-        const ch = line[i];
-        // Skip comments
-        if (!inStr && (ch === '#' || (ch === '/' && line[i + 1] === '/'))) break;
-        if (!inStr && (ch === '"' || ch === "'")) { inStr = true; strChar = ch; i++; continue; }
-        if (inStr && ch === strChar && line[i - 1] !== '\\') { inStr = false; i++; continue; }
-        if (!inStr) {
-            if (ch === '{') depth++;
-            else if (ch === '}') depth--;
-        }
-        i++;
-    }
-    return Math.max(0, depth);
+function codeWithoutComment(line: string): string {
+    return splitComment(line).code.trimEnd();
+}
+
+function isColonBlockHeader(line: string): boolean {
+    const code = codeWithoutComment(line);
+    return /^(if|elif|else|while|for|def|class|try|catch)\b.*:\s*$/.test(code);
+}
+
+function isBraceBlockHeader(line: string): boolean {
+    const code = codeWithoutComment(line).replace(/^}+\s*/, '');
+    return /^(if|elif|else|while|for|def|class|try|catch)\b.*\{\s*$/.test(code);
 }
 
 // ── String-aware processing ───────────────────────────────────────────────────
