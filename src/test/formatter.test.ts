@@ -58,6 +58,16 @@ test('indent braced else body when close and else share a line',
     'if ready {\n    print 1\n} else {\n    print 2\n}\n'
 );
 
+test('indent annotated Java-style classes, methods, and typed statements',
+    '@Deprecated\npublic class Main {\npublic static int addNumbers(int num1,int num2){\nint sum=num1+num2;\nreturn sum;\n}\n} ',
+    '@Deprecated\npublic class Main {\n    public static int addNumbers(int num1, int num2) {\n        int sum = num1 + num2;\n        return sum;\n    }\n}\n'
+);
+
+test('indent Java-style methods with generic signatures',
+    'public class Box {\npublic static Map<String,Integer> copy(Map<String,Integer> value){\nreturn value;\n}\n}',
+    'public class Box {\n    public static Map < String, Integer > copy(Map < String, Integer > value) {\n        return value;\n    }\n}\n'
+);
+
 // ── Operators ─────────────────────────────────────────────────────────────────
 
 test('spaces around ==',

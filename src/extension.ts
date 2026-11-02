@@ -134,14 +134,16 @@ export function formatSource(source: string, indentSize: number = 4, insertFinal
         }
 
         // Insert blank line before top-level def/class
-        const isTopDef = indentLevel === 0 && /^(def|class)\s/.test(stripped);
+        const isTopDef = indentLevel === 0
+            && !stripped.startsWith('@')
+            && /^(?:(?:public|protected|private|static|final|abstract)\s+)*(?:def|class)\s/.test(stripped);
         if (isTopDef && prevWasTopLevel && result.length >= 2) {
             // Already have a blank line from loop? add one if not
             if (result[result.length - 2] !== '') {
                 result.splice(result.length - 1, 0, '');
             }
         }
-        prevWasTopLevel = isTopDef || (indentLevel === 0 && !isTopDef);
+        prevWasTopLevel = isTopDef || (indentLevel === 0 && !isTopDef && !stripped.startsWith('@'));
     }
 
     // Trim trailing blank lines, then add final newline if configured
@@ -257,7 +259,15 @@ function isColonBlockHeader(line: string): boolean {
 
 function isBraceBlockHeader(line: string): boolean {
     const code = codeWithoutComment(line).replace(/^}+\s*/, '');
-    return /^(if|elif|else|while|for|def|class|try|catch)\b.*\{\s*$/.test(code);
+    if (/^(if|elif|else|while|for|def|class|try|catch)\b.*\{\s*$/.test(code)) {
+        return true;
+    }
+    const modifiers = '(?:(?:public|protected|private|static|final|abstract|synchronized|native|strictfp)\\s+)*';
+    const typeName = '[A-Za-z_$][\\w.$]*(?:\\s*<[^{};]*>)?(?:\\[\\])*';
+    const javaClassOrMethod = new RegExp(
+        `^${modifiers}(?:class\\s+[A-Za-z_$][\\w$]*|${typeName}\\s+[A-Za-z_$][\\w$]*\\s*\\([^)]*\\))\\s*\\{\\s*$`
+    );
+    return javaClassOrMethod.test(code);
 }
 
 // ── String-aware processing ───────────────────────────────────────────────────
